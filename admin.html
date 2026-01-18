@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>IML Admin</title>
+
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      background: #102a43;
+      color: #fff;
+      font-family: Tahoma, Segoe UI, sans-serif;
+    }
+    .admin-container {
+      max-width: 900px;
+      margin: 20px auto;
+      background: rgba(0,0,0,0.2);
+      padding: 15px;
+      border-radius: 6px;
+    }
+    .admin-header {
+      margin-bottom: 15px;
+    }
+    .tab-content {
+      margin-top: 10px;
+    }
+    .request-row {
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 6px 0;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="admin-container">
+  <div class="admin-header">
+    <h3>IML Admin Panel</h3>
+    <div id="adminStatus" style="font-size:12px;"></div>
+  </div>
+
+  <div id="adminLoginSection">
+    <div class="form-inline">
+      <div class="form-group">
+        <label>Admin ID</label>
+        <input type="text" id="adminId" class="form-control input-sm" value="root">
+      </div>
+      <div class="form-group" style="margin-left:8px;">
+        <label>Password</label>
+        <input type="password" id="adminPass" class="form-control input-sm" value="1234">
+      </div>
+      <button id="adminLoginBtn" class="btn btn-xs btn-default" style="margin-left:8px;">Login</button>
+    </div>
+  </div>
+
+  <div id="adminPanel" style="display:none;">
+
+    <ul class="nav nav-tabs">
+      <li class="active"><a href="#tab-users" data-toggle="tab">Users</a></li>
+      <li><a href="#tab-quizzes" data-toggle="tab">Quizzes</a></li>
+      <li><a href="#tab-cashout" data-toggle="tab">Cashout Options</a></li>
+      <li><a href="#tab-requests" data-toggle="tab">Cashout Requests</a></li>
+      <li><a href="#tab-bonus" data-toggle="tab">Bonus Codes</a></li>
+    </ul>
+
+    <div class="tab-content">
+
+      <div class="tab-pane fade in active" id="tab-users">
+        <h4>Add User</h4>
+        <div class="form-inline">
+          <input type="text" id="newUserId" class="form-control input-sm" placeholder="UserID">
+          <input type="text" id="newUserPass" class="form-control input-sm" placeholder="PassID">
+          <input type="number" id="newUserBalance" class="form-control input-sm" placeholder="Balance" value="0">
+          <input type="number" id="newUserReversal" class="form-control input-sm" placeholder="Reversal" value="0">
+          <button id="addUserBtn" class="btn btn-xs btn-success">Add User</button>
+        </div>
+        <div id="addUserStatus" style="margin-top:6px;font-size:12px;"></div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-quizzes">
+        <h4>Add Quiz</h4>
+        <div class="form-inline">
+          <input type="text" id="quizId" class="form-control input-sm" placeholder="Quiz ID">
+          <input type="text" id="quizQuestion" class="form-control input-sm" placeholder="Question" style="width:260px;">
+          <input type="text" id="quizCorrect" class="form-control input-sm" placeholder="Correct Answer">
+          <input type="number" id="quizReward" class="form-control input-sm" placeholder="Reward" value="10">
+          <button id="addQuizBtn" class="btn btn-xs btn-success">Add Quiz</button>
+        </div>
+        <div id="addQuizStatus" style="margin-top:6px;font-size:12px;"></div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-cashout">
+        <h4>Add Cashout Option</h4>
+        <div class="form-inline">
+          <input type="text" id="cashName" class="form-control input-sm" placeholder="Reward Name">
+          <input type="number" id="cashCost" class="form-control input-sm" placeholder="Cost">
+          <input type="text" id="cashDesc" class="form-control input-sm" placeholder="Description" style="width:260px;">
+          <input type="text" id="cashImg" class="form-control input-sm" placeholder="Image URL (optional)">
+          <button id="addCashBtn" class="btn btn-xs btn-success">Add Cashout</button>
+        </div>
+        <div id="addCashStatus" style="margin-top:6px;font-size:12px;"></div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-requests">
+        <h4>Pending Cashout Requests</h4>
+        <button id="refreshRequestsBtn" class="btn btn-xs btn-default">Refresh</button>
+        <div id="requestsList" style="margin-top:8px;"></div>
+        <div id="requestsStatus" style="margin-top:6px;font-size:12px;"></div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-bonus">
+        <h4>Add Bonus Code</h4>
+        <div class="form-inline">
+          <input type="text" id="bonusCode" class="form-control input-sm" placeholder="Code">
+          <input type="number" id="bonusAmount" class="form-control input-sm" placeholder="Amount">
+          <input type="date" id="bonusExpires" class="form-control input-sm">
+          <select id="bonusMulti" class="form-control input-sm">
+            <option value="false">One-time use</option>
+            <option value="true">Multi-use</option>
+          </select>
+          <button id="addBonusBtn" class="btn btn-xs btn-success">Add Bonus</button>
+        </div>
+        <div id="bonusAddStatus" style="margin-top:6px;font-size:12px;"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentAdmin = null;
+
+  function apiAdminLogin(adminId, adminPass) {
+    return $.post("/api/admin/login", { adminId, adminPass });
+  }
+
+  function apiAddUser(adminId, userId, passId, balance, reversal) {
+    return $.post("/api/admin/addUser", {
+      adminId, userId, passId, balance, reversal
+    });
+  }
+
+  function apiAddQuiz(adminId, quizId, question, correctAnswer, rewardAmount) {
+    return $.post("/api/admin/addQuiz", {
+      adminId, quizId, question, correctAnswer, rewardAmount
+    });
+  }
+
+  function apiAddCashout(adminId, name, cost, description, imageUrl) {
+    return $.post("/api/admin/addCashout", {
+      adminId, name, cost, description, imageUrl
+    });
+  }
+
+  function apiListRequests(adminId) {
+    return $.post("/api/admin/listRequests", { adminId });
+  }
+
+  function apiApprove(adminId, requestId) {
+    return $.post("/api/admin/approve", { adminId, requestId });
+  }
+
+  function apiReject(adminId, requestId) {
+    return $.post("/api/admin/reject", { adminId, requestId });
+  }
+
+  function apiAddBonus(adminId, code, amount, expires, multiUse) {
+    return $.post("/api/admin/addBonusCode", {
+      adminId, code, amount, expires, multiUse
+    });
+  }
+
+  $("#adminLoginBtn").on("click", function() {
+    let id = $("#adminId").val().trim();
+    let pw = $("#adminPass").val().trim();
+
+    $("#adminStatus").text("Logging in...");
+
+    apiAdminLogin(id, pw).done(function(res) {
+      if (typeof res === "string") res = JSON.parse(res);
+      if (!res.success) {
+        $("#adminStatus").text("Login failed");
+        return;
+      }
+      currentAdmin = res.AdminID;
+      $("#adminStatus").text("Logged in as " + currentAdmin);
+      $("#adminLoginSection").hide();
+      $("#adminPanel").show();
+    }).fail(function() {
+      $("#adminStatus").text("Error contacting server");
+    });
+  });
+
+  $("#addUserBtn").on("click", function() {
+    if (!currentAdmin) {
+      $("#addUserStatus").text("Not logged in.");
+      return;
+    }
+    let u = $("#newUserId").val().trim();
+    let p = $("#newUserPass").val().trim();
+    let b = $("#newUserBalance").val().trim();
+    let r = $("#newUserReversal").val().trim();
+
+    $("#addUserStatus").text("Adding user...");
+
+    apiAddUser(currentAdmin, u, p, b, r).done(function(res) {
+      if (typeof res === "string") res = JSON.parse(res);
+      if (!res.success) {
+        $("#addUserStatus").text(res.error || "Failed");
+        return;
+      }
+      $("#addUserStatus").text("User added.");
+    }).fail(function() {
+      $("#addUserStatus").text("Error contacting server");
+    });
+  });
+
+  $("#addQuizBtn").on("click", function() {
+    if (!currentAdmin) {
+      $("#addQuizStatus").text("Not logged in.");
+      return;
+    }
+    let qid = $("#quizId").val().trim();
+    let q = $("#quizQuestion").val().trim();
+    let c = $("#quizCorrect").val().trim();
+    let rw = $("#quizReward").val().trim();
+
+    $("#addQuizStatus").text("Adding quiz...");
+
+    apiAddQuiz(currentAdmin, qid, q, c, rw).done(function(res) {
+      if (typeof res === "string") res = JSON.parse(res);
+      if (!res.success) {
+        $("#addQuizStatus").text(res.error || "Failed");
+        return;
+      }
+      $("#addQuizStatus").text("Quiz added.");
+    }).fail(function() {
+      $("#addQuizStatus").text("Error contacting server");
+    });
+  });
+
+  $("#addCashBtn").on("click", function() {
+    if (!currentAdmin) {
+      $("#addCashStatus").text("Not logged in.");
+      return;
+    }
+    let name = $("#cashName").val().trim();
+    let cost = $("#cashCost").val().trim();
+    let desc = $("#cashDesc").val().trim();
+    let img = $("#cashImg").val().trim();
+
+    $("#addCashStatus").text("Adding cashout option...");
+
+    apiAddCashout(currentAdmin, name, cost, desc, img).done(function(res) {
+      if (typeof res === "string") res = JSON.parse(res);
+      if (!res.success) {
+        $("#addCashStatus").text(res.error || "Failed");
+        return;
+      }
+      $("#addCashStatus").text("Cashout option added.");
+    }).fail(function() {
+      $("#addCashStatus").text("Error contacting server");
+    });
+  });
+
+  $("#refreshRequestsBtn").on("click", function() {
+    if (!currentAdmin) {
+      $("#requestsStatus").text("Not logged in.");
+      return;
+    }
+    $("#requestsStatus").text("Loading requests...");
+
+    apiListRequests(currentAdmin).done(function(res) {
+      if (typeof res === "string") res = JSON.parse(res);
+      if (!res.success) {
+        $("#requestsStatus").text(res.error || "Failed");
+        return;
+      }
+      $("#requestsStatus").text("");
+      let list = res.requests || [];
+      if (list.length === 0) {
+        $("#requestsList").html("<em>No pending requests.</em>");
+        return;
+      }
+      let html = "";
+      list.forEach(r => {
+        html += '<div class="request-row">' +
+          '<strong>' + r.user + '</strong> → ' + r.rewardName +
+          ' (' + r.cost + ' pts)' +
+          ' <button class="btn btn-xs btn-success" onclick="approveReq(\'' + r.id + '\')">Approve</button>' +
+          ' <button class="btn btn-xs btn-danger" onclick="rejectReq(\'' + r.id + '\')">Reject</button>' +
+          '</div>';
+      });
+      $("#requestsList").html(html);
+    }).fail(function() {
+      $("#requestsStatus").text("Error contacting server");
+    });
+  });
+
+  $("#addBonusBtn").on("click", function() {
+    if (!currentAdmin) {
+      $("#bonusAddStatus").text("Not logged in.");
+      return;
+    }
+
+    let code = $("#bonusCode").val().trim();
+    let amount = $("#bonusAmount").val().trim();
+    let expires = $("#bonusExpires").val().trim();
+    let multi = $("#bonusMulti").val();
+
+    if (!code || !amount) {
+      $("#bonusAddStatus").text("Enter code + amount.");
+      return;
+    }
+
+    $("#bonusAddStatus").text("Adding...");
+
+    apiAddBonus(currentAdmin, code, amount, expires, multi).done(function(res) {
+      if (typeof res === "string") res = JSON.parse(res);
+      if (!res.success) {
+        $("#bonusAddStatus").text(res.error || "Failed");
+        return;
+      }
+      $("#bonusAddStatus").text("Bonus code added.");
+    }).fail(function() {
+      $("#bonusAddStatus").text("Error contacting server");
+    });
+  });
+
+  window.approveReq = function(id) {
+    if (!currentAdmin) return;
+    $("#requestsStatus").text("Approving...");
+    apiApprove(currentAdmin, id).done(function(res) {
+      if (typeof res === "string") res = JSON.parse(res);
+      if (!res.success) {
+        $("#requestsStatus").text(res.error || "Failed");
+        return;
+      }
+      $("#requestsStatus").text("Approved. Reward code: " + res.rewardCode);
+      $("#refreshRequestsBtn").click();
+    }).fail(function() {
+      $("#requestsStatus").text("Error contacting server");
+    });
+  };
+
+  window.rejectReq = function(id) {
+    if (!currentAdmin) return;
+    $("#requestsStatus").text("Rejecting...");
+    apiReject(currentAdmin, id).done(function(res) {
+      if (typeof res === "string") res = JSON.parse(res);
+      if (!res.success) {
+        $("#requestsStatus").text(res.error || "Failed");
+        return;
+      }
+      $("#requestsStatus").text("Rejected.");
+      $("#refreshRequestsBtn").click();
+    }).fail(function() {
+      $("#requestsStatus").text("Error contacting server");
+    });
+  };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "users": [
+    {
+      "UserID": "demo",
+      "PassID": "demo",
+      "Balance": 0,
+      "Reversal": 0,
+      "TotalCorrect": 0,
+      "TotalQuestions": 0,
+      "Rewards": []
+    }
+  ],
+  "admins": [
+    {
+      "AdminID": "root",
+      "AdminPass": "1234"
+    }
+  ],
+  "quizzes": [],
+  "cashoutOptions": [],
+  "cashoutRequests": [],
+  "bonusCodes": [
+    {
+      "code": "WELCOME100",
+      "amount": 100,
+      "expires": "2026-12-31",
+      "multiUse": false,
+      "usedBy": []
+    }
+  ]
+}
